@@ -1,4 +1,4 @@
 <ng-content select="ngx-dropzone-label"></ng-content>
-@if (removable) {
+@if (removable()) {
   <ngx-dropzone-remove-badge (click)="_remove($event)" />
 }

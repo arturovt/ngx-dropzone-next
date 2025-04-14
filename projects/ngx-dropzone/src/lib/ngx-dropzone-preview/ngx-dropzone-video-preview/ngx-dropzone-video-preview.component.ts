@@ -1,22 +1,22 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import {
+  Component,
+  inject,
+  DestroyRef,
+  afterNextRender,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
+import { DomSanitizer, type SafeUrl } from '@angular/platform-browser';
+
 import { NgxDropzonePreviewComponent } from '../ngx-dropzone-preview.component';
-import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+import { NgxDropzoneRemoveBadgeComponent } from '../ngx-dropzone-remove-badge/ngx-dropzone-remove-badge.component';
 
 @Component({
   selector: 'ngx-dropzone-video-preview',
-  template: `
-    <video
-      *ngIf="sanitizedVideoSrc"
-      controls
-      (click)="$event.stopPropagation()"
-    >
-      <source [src]="sanitizedVideoSrc" />
-    </video>
-    <ng-content select="ngx-dropzone-label"></ng-content>
-    <ngx-dropzone-remove-badge *ngIf="removable" (click)="_remove($event)">
-    </ngx-dropzone-remove-badge>
-  `,
+  templateUrl: './ngx-dropzone-video-preview.component.html',
   styleUrls: ['./ngx-dropzone-video-preview.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [NgxDropzoneRemoveBadgeComponent],
   providers: [
     {
       provide: NgxDropzonePreviewComponent,
@@ -24,38 +24,30 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
     },
   ],
 })
-export class NgxDropzoneVideoPreviewComponent
-  extends NgxDropzonePreviewComponent
-  implements OnInit, OnDestroy
-{
-  constructor(sanitizer: DomSanitizer) {
-    super(sanitizer);
-  }
-
+export class NgxDropzoneVideoPreviewComponent extends NgxDropzonePreviewComponent {
   /** The video data source. */
-  sanitizedVideoSrc: SafeUrl;
+  protected readonly _sanitizedVideoSrc = signal<SafeUrl | null>(null);
 
   private videoSrc: string;
 
-  ngOnInit() {
-    if (!this.file) {
-      console.error(
-        'No file to read. Please provide a file using the [file] Input property.'
+  constructor(sanitizer: DomSanitizer) {
+    super(sanitizer);
+
+    inject(DestroyRef).onDestroy(() => URL.revokeObjectURL(this.videoSrc));
+
+    afterNextRender(() => {
+      if (!this.file()) {
+        return;
+      }
+
+      /**
+       * We sanitize the URL here to enable the preview.
+       * Please note that this could cause security issues!
+       **/
+      this.videoSrc = URL.createObjectURL(this.file());
+      this._sanitizedVideoSrc.set(
+        this.sanitizer.bypassSecurityTrustUrl(this.videoSrc)
       );
-      return;
-    }
-
-    /**
-     * We sanitize the URL here to enable the preview.
-     * Please note that this could cause security issues!
-     **/
-    this.videoSrc = URL.createObjectURL(this.file);
-    this.sanitizedVideoSrc = this.sanitizer.bypassSecurityTrustUrl(
-      this.videoSrc
-    );
-  }
-
-  ngOnDestroy() {
-    URL.revokeObjectURL(this.videoSrc);
+    });
   }
 }
