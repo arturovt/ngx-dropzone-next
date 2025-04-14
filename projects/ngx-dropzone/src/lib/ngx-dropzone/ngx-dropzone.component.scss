@@ -2,59 +2,59 @@ $dz-bg: #fff;
 $dz-border: #717386;
 
 :host {
-	display: flex;
-	align-items: center;
-	height: 180px;
-	background: $dz-bg;
-	cursor: pointer;
-	color: $dz-border;
-	border: 2px dashed $dz-border;
-	border-radius: 5px;
-	font-size: 16px;
+  display: flex;
+  align-items: center;
+  height: 180px;
+  background: $dz-bg;
+  cursor: pointer;
+  color: $dz-border;
+  border: 2px dashed $dz-border;
+  border-radius: 5px;
+  font-size: 16px;
 
-	&.ngx-dz-hovered {
-		border-style: solid;
-	}
+  &.ngx-dz-hovered {
+    border-style: solid;
+  }
 
-	&.ngx-dz-disabled {
-		opacity: 0.5;
-		cursor: no-drop;
-		pointer-events: none;
-	}
+  &.ngx-dz-disabled {
+    opacity: 0.5;
+    cursor: no-drop;
+    pointer-events: none;
+  }
 
-	/** The default scroll-to-side styles **/
-	overflow-x: auto;
+  /** The default scroll-to-side styles **/
+  overflow-x: auto;
 
-	&.expandable {
-		overflow: hidden;
-		height: unset;
-		min-height: 180px;
-		flex-wrap: wrap;
-	}
+  &.expandable {
+    overflow: hidden;
+    height: unset;
+    min-height: 180px;
+    flex-wrap: wrap;
+  }
 
-	&.unclickable {
-		cursor: default;
-	}
+  &.unclickable {
+    cursor: default;
+  }
 
-	::ng-deep ngx-dropzone-label {
-		text-align: center;
-		z-index: 10;
-		margin: 10px auto;
-	}
+  ::ng-deep ngx-dropzone-label {
+    text-align: center;
+    z-index: 10;
+    margin: 10px auto;
+  }
 
-	& input {
-		width: 0.1px;
-		height: 0.1px;
-		opacity: 0;
-		overflow: hidden;
-		position: absolute;
-		z-index: -1;
+  & input {
+    width: 0.1px;
+    height: 0.1px;
+    opacity: 0;
+    overflow: hidden;
+    position: absolute;
+    z-index: -1;
 
-		&:focus + ::ng-deep ngx-dropzone-label {
-			/* Fallback for older browsers */
-			outline: 1px dotted #000;
+    &:focus + ::ng-deep ngx-dropzone-label {
+      /* Fallback for older browsers */
+      outline: 1px dotted #000;
 
-			outline: -webkit-focus-ring-color auto 5px;
-		}
-	}
+      outline: -webkit-focus-ring-color auto 5px;
+    }
+  }
 }

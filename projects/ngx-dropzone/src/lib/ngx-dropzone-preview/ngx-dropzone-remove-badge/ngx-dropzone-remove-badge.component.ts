@@ -8,6 +8,6 @@ import { Component } from '@angular/core';
       <line x1="0" y1="10" x2="10" y2="0" />
     </svg>
   `,
-  styleUrls: ['./ngx-dropzone-remove-badge.component.scss']
+  styleUrls: ['./ngx-dropzone-remove-badge.component.scss'],
 })
-export class NgxDropzoneRemoveBadgeComponent { }
+export class NgxDropzoneRemoveBadgeComponent {}

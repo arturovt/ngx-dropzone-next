@@ -1,7 +1,25 @@
-import { Component, EventEmitter, Output, Input, ViewChild, ContentChildren, QueryList, HostBinding, HostListener, Self, ElementRef } from '@angular/core';
-import {NgxDropzoneService, RejectedFile} from '../ngx-dropzone.service';
-import { coerceBooleanProperty, coerceNumberProperty } from '../helpers';
+import {
+  Component,
+  HostListener,
+  ElementRef,
+  output,
+  input,
+  inject,
+  Injector,
+  viewChild,
+  contentChildren,
+  computed,
+  booleanAttribute,
+  numberAttribute,
+  signal,
+  OnChanges,
+  SimpleChanges,
+} from '@angular/core';
+
+import { preventDefault } from '../helpers';
 import { NgxDropzonePreviewComponent } from '../ngx-dropzone-preview/ngx-dropzone-preview.component';
+
+import type { RejectedFile } from './ngx-dropzone.service';
 
 export interface NgxDropzoneChangeEvent {
   source: NgxDropzoneComponent;
@@ -13,146 +31,109 @@ export interface NgxDropzoneChangeEvent {
   selector: 'ngx-dropzone, [ngx-dropzone]',
   templateUrl: './ngx-dropzone.component.html',
   styleUrls: ['./ngx-dropzone.component.scss'],
-  providers: [NgxDropzoneService]
+  host: {
+    '[class.ngx-dz-hovered]': 'isHovered()',
+    '[class.unclickable]': 'disableClick()',
+    '[class.expandable]': 'expandable()',
+    '[class.ngx-dz-disabled]': 'disabled()',
+  },
 })
-export class NgxDropzoneComponent {
-
-  constructor(
-    @Self() private service: NgxDropzoneService
-  ) {}
+export class NgxDropzoneComponent implements OnChanges {
+  private readonly _injector = inject(Injector);
 
   /** A list of the content-projected preview children. */
-  @ContentChildren(NgxDropzonePreviewComponent, { descendants: true })
-  _previewChildren: QueryList<NgxDropzonePreviewComponent>;
+  readonly previewChildren = contentChildren(NgxDropzonePreviewComponent, {
+    descendants: true,
+  });
 
-  get _hasPreviews(): boolean {
-    return !!this._previewChildren.length;
-  }
+  protected readonly hasPreviews = computed(
+    () => !!this.previewChildren().length
+  );
 
   /** A template reference to the native file input element. */
-  @ViewChild('fileInput', { static: true }) _fileInput: ElementRef;
+  readonly fileInput =
+    viewChild.required<ElementRef<HTMLInputElement>>('fileInput');
 
   /** Emitted when any files were added or rejected. */
-  @Output() readonly change = new EventEmitter<NgxDropzoneChangeEvent>();
+  readonly change = output<NgxDropzoneChangeEvent>();
 
   /** Set the accepted file types. Defaults to '*'. */
-  @Input() accept = '*';
+  readonly accept = input('*');
 
   /** Disable any user interaction with the component. */
-  @Input()
-  @HostBinding('class.ngx-dz-disabled')
-  get disabled(): boolean {
-    return this._disabled;
-  }
-  set disabled(value: boolean) {
-    this._disabled = coerceBooleanProperty(value);
-
-    if (this._isHovered) {
-      this._isHovered = false;
-    }
-  }
-  private _disabled = false;
+  readonly disabled = input(false, { transform: booleanAttribute });
 
   /** Allow the selection of multiple files. */
-  @Input()
-  get multiple(): boolean {
-    return this._multiple;
-  }
-  set multiple(value: boolean) {
-    this._multiple = coerceBooleanProperty(value);
-  }
-  private _multiple = true;
+  readonly multiple = input(true, { transform: booleanAttribute });
 
   /** Set the maximum size a single file may have. */
-  @Input()
-  get maxFileSize(): number {
-    return this._maxFileSize;
-  }
-  set maxFileSize(value: number) {
-    this._maxFileSize = coerceNumberProperty(value);
-  }
-  private _maxFileSize: number = undefined;
+  readonly maxFileSize = input(undefined, { transform: numberAttribute });
 
   /** Allow the dropzone container to expand vertically. */
-  @Input()
-  @HostBinding('class.expandable')
-  get expandable(): boolean {
-    return this._expandable;
-  }
-  set expandable(value: boolean) {
-    this._expandable = coerceBooleanProperty(value);
-  }
-  private _expandable: boolean = false;
+  readonly expandable = input(false, { transform: booleanAttribute });
 
   /** Open the file selector on click. */
-  @Input()
-  @HostBinding('class.unclickable')
-  get disableClick(): boolean {
-    return this._disableClick;
-  }
-  set disableClick(value: boolean) {
-    this._disableClick = coerceBooleanProperty(value);
-  }
-  private _disableClick = false;
+  readonly disableClick = input(false, { transform: booleanAttribute });
 
   /** Allow dropping directories. */
-  @Input()
-  get processDirectoryDrop(): boolean {
-    return this._processDirectoryDrop;
-  }
-  set processDirectoryDrop(value: boolean) {
-    this._processDirectoryDrop = coerceBooleanProperty(value);
-  }
-  private _processDirectoryDrop = false;
+  readonly processDirectoryDrop = input(false, { transform: booleanAttribute });
 
   /** Expose the id, aria-label, aria-labelledby and aria-describedby of the native file input for proper accessibility. */
-  @Input() id: string;
-  @Input('aria-label') ariaLabel: string;
-  @Input('aria-labelledby') ariaLabelledby: string;
-  @Input('aria-describedby') ariaDescribedBy: string;
+  readonly id = input('');
+  readonly ariaLabel = input('', { alias: 'aria-label' });
+  readonly ariaLabelledby = input('', { alias: 'aria-labelledby' });
+  readonly ariaDescribedBy = input('', { alias: 'aria-describedby' });
 
-  @HostBinding('class.ngx-dz-hovered')
-  _isHovered = false;
+  protected readonly isHovered = signal(false);
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes.disabled && this.isHovered()) {
+      this.isHovered.set(false);
+    }
+  }
 
   /** Show the native OS file explorer to select files. */
   @HostListener('click')
   _onClick() {
-    if (!this.disableClick) {
+    if (!this.disableClick()) {
       this.showFileSelector();
     }
   }
 
   @HostListener('dragover', ['$event'])
-  _onDragOver(event) {
-    if (this.disabled) {
+  _onDragOver(event: DragEvent) {
+    if (this.disabled()) {
       return;
     }
 
-    this.preventDefault(event);
-    this._isHovered = true;
+    preventDefault(event);
+    this.isHovered.set(true);
   }
 
   @HostListener('dragleave')
   _onDragLeave() {
-    this._isHovered = false;
+    this.isHovered.set(false);
   }
 
   @HostListener('drop', ['$event'])
-  _onDrop(event) {
-    if (this.disabled) {
+  _onDrop(event: DragEvent) {
+    if (this.disabled()) {
       return;
     }
 
-    this.preventDefault(event);
-    this._isHovered = false;
+    preventDefault(event);
+    this.isHovered.set(false);
 
     // if processDirectoryDrop is not enabled or webkitGetAsEntry is not supported we handle the drop as usual
-    if (!this.processDirectoryDrop || !DataTransferItem.prototype.webkitGetAsEntry) {
+    if (
+      !this.processDirectoryDrop() ||
+      !DataTransferItem.prototype.webkitGetAsEntry
+    ) {
       this.handleFileDrop(event.dataTransfer.files);
 
-    // if processDirectoryDrop is enabled and webkitGetAsEntry is supported we can extract files from a dropped directory
+      // if processDirectoryDrop is enabled and webkitGetAsEntry is supported we can extract files from a dropped directory
     } else {
-      const droppedItems: DataTransferItem[] = event.dataTransfer.items;
+      const droppedItems: DataTransferItemList = event.dataTransfer.items;
 
       if (droppedItems.length > 0) {
         const droppedFiles: File[] = [];
@@ -184,17 +165,23 @@ export class NgxDropzoneComponent {
           const extractFilesFromDirectoryCalls = [];
 
           for (const droppedDirectory of droppedDirectories) {
-            extractFilesFromDirectoryCalls.push(this.extractFilesFromDirectory(droppedDirectory));
+            extractFilesFromDirectoryCalls.push(
+              this.extractFilesFromDirectory(droppedDirectory)
+            );
           }
 
           // wait for all directories to be proccessed to add the extracted files afterwards
-          Promise.all(extractFilesFromDirectoryCalls).then((allExtractedFiles: any[]) => {
-            allExtractedFiles.reduce((a, b) => [...a, ...b]).forEach((extractedFile: File) => {
-              droppedFilesList.items.add(extractedFile);
-            });
+          Promise.all(extractFilesFromDirectoryCalls).then(
+            (allExtractedFiles: any[]) => {
+              allExtractedFiles
+                .reduce((a, b) => [...a, ...b])
+                .forEach((extractedFile: File) => {
+                  droppedFilesList.items.add(extractedFile);
+                });
 
-            this.handleFileDrop(droppedFilesList.files);
-          });
+              this.handleFileDrop(droppedFilesList.files);
+            }
+          );
         }
       }
     }
@@ -203,7 +190,9 @@ export class NgxDropzoneComponent {
   private extractFilesFromDirectory(directory) {
     async function getFileFromFileEntry(fileEntry) {
       try {
-        return await new Promise((resolve, reject) => fileEntry.file(resolve, reject));
+        return await new Promise((resolve, reject) =>
+          fileEntry.file(resolve, reject)
+        );
       } catch (err) {
         console.log('Error converting a fileEntry to a File: ', err);
       }
@@ -216,7 +205,7 @@ export class NgxDropzoneComponent {
 
       // we need this to be a recursion because of this issue: https://bugs.chromium.org/p/chromium/issues/detail?id=514087
       const readEntries = () => {
-        dirReader.readEntries(async(dirItems) => {
+        dirReader.readEntries(async (dirItems) => {
           if (!dirItems.length) {
             resolve(files);
           } else {
@@ -237,7 +226,7 @@ export class NgxDropzoneComponent {
 
   showFileSelector() {
     if (!this.disabled) {
-      (this._fileInput.nativeElement as HTMLInputElement).click();
+      (this.fileInput().nativeElement as HTMLInputElement).click();
     }
   }
 
@@ -246,24 +235,28 @@ export class NgxDropzoneComponent {
     this.handleFileDrop(files);
 
     // Reset the native file input element to allow selecting the same file again
-    this._fileInput.nativeElement.value = '';
+    this.fileInput().nativeElement.value = '';
 
     // fix(#32): Prevent the default event behaviour which caused the change event to emit twice.
-    this.preventDefault(event);
+    preventDefault(event);
   }
 
-  private handleFileDrop(files: FileList) {
-    const result = this.service.parseFileList(files, this.accept, this.maxFileSize, this.multiple);
+  private async handleFileDrop(files: FileList) {
+    const { NgxDropzoneService } = await import('./ngx-dropzone.service');
 
-    this.change.next({
+    const service = this._injector.get(NgxDropzoneService);
+
+    const result = service.parseFileList(
+      files,
+      this.accept(),
+      this.maxFileSize(),
+      this.multiple()
+    );
+
+    this.change.emit({
       addedFiles: result.addedFiles,
       rejectedFiles: result.rejectedFiles,
-      source: this
+      source: this,
     });
-  }
-
-  private preventDefault(event: DragEvent) {
-    event.preventDefault();
-    event.stopPropagation();
   }
 }

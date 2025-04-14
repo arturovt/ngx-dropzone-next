@@ -1,6 +1,6 @@
 {
   "$schema": "../../node_modules/ng-packagr/ng-package.schema.json",
-  "dest": "../../dist/ngx-dropzone",
+  "dest": "../../dist/ngx-dropzone-next",
   "lib": {
     "entryFile": "src/public_api.ts"
   }

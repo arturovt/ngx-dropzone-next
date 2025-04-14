@@ -6,16 +6,16 @@
   },
   "compilerOptions": {
     "baseUrl": "./",
-    "downlevelIteration": true,
     "importHelpers": true,
     "module": "es2020",
+    "esModuleInterop": true,
     "outDir": "./dist/out-tsc",
     "sourceMap": true,
     "declaration": false,
     "moduleResolution": "node",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "target": "es2015",
+    "target": "ES2022",
     "typeRoots": [
       "node_modules/@types"
     ],
@@ -30,6 +30,7 @@
       "ngx-dropzone/*": [
         "dist/ngx-dropzone/*"
       ]
-    }
+    },
+    "useDefineForClassFields": false
   }
 }

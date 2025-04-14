@@ -1,11 +1,18 @@
 /*
- * Public API Surface of ngx-dropzone
+ * Public API Surface of ngx-dropzone-next
  */
 
-export * from './lib/ngx-dropzone.module';
-export * from './lib/ngx-dropzone-label.directive';
-export * from './lib/ngx-dropzone/ngx-dropzone.component';
-export * from './lib/ngx-dropzone-preview/ngx-dropzone-preview.component';
-export * from './lib/ngx-dropzone-preview/ngx-dropzone-image-preview/ngx-dropzone-image-preview.component';
-export * from './lib/ngx-dropzone-preview/ngx-dropzone-video-preview/ngx-dropzone-video-preview.component';
-export * from './lib/ngx-dropzone-preview/ngx-dropzone-remove-badge/ngx-dropzone-remove-badge.component';
+export { NgxDropzoneLabelDirective } from './lib/ngx-dropzone-label.directive';
+
+export {
+  type NgxDropzoneChangeEvent,
+  NgxDropzoneComponent,
+} from './lib/ngx-dropzone/ngx-dropzone.component';
+
+export { NgxDropzonePreviewComponent } from './lib/ngx-dropzone-preview/ngx-dropzone-preview.component';
+
+export { NgxDropzoneImagePreviewComponent } from './lib/ngx-dropzone-preview/ngx-dropzone-image-preview/ngx-dropzone-image-preview.component';
+
+export { NgxDropzoneVideoPreviewComponent } from './lib/ngx-dropzone-preview/ngx-dropzone-video-preview/ngx-dropzone-video-preview.component';
+
+export { NgxDropzoneRemoveBadgeComponent } from './lib/ngx-dropzone-preview/ngx-dropzone-remove-badge/ngx-dropzone-remove-badge.component';
