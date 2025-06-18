@@ -1,3 +1,5 @@
+@use 'sass:color';
+
 :host {
   display: flex;
   justify-content: center;
@@ -13,7 +15,7 @@
   cursor: pointer;
 
   &:hover {
-    background: darken(#bbb, 5%);
+    background: color.adjust(#bbb, $lightness: -5%);
   }
 
   > svg {

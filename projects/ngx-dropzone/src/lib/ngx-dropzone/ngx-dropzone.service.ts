@@ -26,14 +26,14 @@ export class NgxDropzoneService {
   parseFileList(
     files: FileList,
     accept: string,
-    maxFileSize: number,
+    maxFileSize: number | null | undefined,
     multiple: boolean
   ): FileSelectResult {
     const addedFiles: File[] = [];
     const rejectedFiles: RejectedFile[] = [];
 
     for (let i = 0; i < files.length; i++) {
-      const file = files.item(i);
+      const file = files.item(i)!;
 
       if (!this.isAccepted(file, accept)) {
         this.rejectFile(rejectedFiles, file, 'type');

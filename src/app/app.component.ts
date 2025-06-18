@@ -1,26 +1,42 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import {
+  NgxDropzoneChangeEvent,
+  NgxDropzoneComponent,
+  NgxDropzoneImagePreviewComponent,
+  NgxDropzoneLabelDirective,
+  NgxDropzonePreviewComponent,
+  NgxDropzoneVideoPreviewComponent,
+} from 'ngx-dropzone-next';
 
 @Component({
-    selector: 'app-root',
-    templateUrl: './app.component.html',
-    styleUrls: ['./app.component.scss'],
-    
+  selector: 'app-root',
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    NgxDropzoneComponent,
+    NgxDropzonePreviewComponent,
+    NgxDropzoneVideoPreviewComponent,
+    NgxDropzoneImagePreviewComponent,
+    NgxDropzoneLabelDirective,
+  ],
 })
 export class AppComponent {
+  readonly files = signal<File[]>([]);
 
-	files: File[] = [];
+  onFilesAdded(event: Event | NgxDropzoneChangeEvent) {
+    if (event instanceof Event) {
+      return;
+    }
 
-	onFilesAdded(event) {
-		console.log(event);
-		this.files.push(...event.addedFiles);
-	}
+    this.files.update((files) => [...files, ...event.addedFiles]);
+  }
 
-	onFilesRejected(event) {
-		console.log(event);
-	}
-
-	onRemove(event) {
-		console.log(event);
-		this.files.splice(this.files.indexOf(event), 1);
-	}
+  onRemove(file: File) {
+    console.log(file);
+    this.files.update((files) => {
+      files.splice(files.indexOf(file), 1);
+      return [...files];
+    });
+  }
 }

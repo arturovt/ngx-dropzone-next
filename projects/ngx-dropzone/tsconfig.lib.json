@@ -1,19 +1,24 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "declaration": true,
-    "declarationMap": true,
-    "inlineSources": true,
-    "types": [],
-    "target": "ES2022",
+    "target": "es2022",
+    "module": "es2022",
+    "importHelpers": true,
+    "downlevelIteration": true,
+    "lib": ["dom", "es2018"],
+    "types": ["node"],
     "useDefineForClassFields": false,
-    "verbatimModuleSyntax": true
+    "moduleResolution": "bundler"
   },
   "angularCompilerOptions": {
-    "enableI18nLegacyMessageIdFormat": false,
+    "compilationMode": "partial",
+    "annotateForClosureCompiler": true,
+    "skipTemplateCodegen": true,
+    "strictMetadataEmit": true,
+    "fullTemplateTypeCheck": true,
     "strictInjectionParameters": true,
-    "strictInputAccessModifiers": true,
-    "strictTemplates": true
+    "enableResourceInlining": true
   },
-  "exclude": ["src/test.ts", "**/*.spec.ts"]
+  "include": ["**/*.ts"],
+  "exclude": ["**/*.spec.ts", "**/*.test.ts", "jest.config.ts"]
 }

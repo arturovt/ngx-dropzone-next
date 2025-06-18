@@ -5,6 +5,7 @@ import {
   afterNextRender,
   signal,
   ChangeDetectionStrategy,
+  untracked,
 } from '@angular/core';
 import { DomSanitizer, type SafeUrl } from '@angular/platform-browser';
 
@@ -28,26 +29,26 @@ export class NgxDropzoneVideoPreviewComponent extends NgxDropzonePreviewComponen
   /** The video data source. */
   protected readonly _sanitizedVideoSrc = signal<SafeUrl | null>(null);
 
-  private videoSrc: string;
+  constructor() {
+    super();
 
-  constructor(sanitizer: DomSanitizer) {
-    super(sanitizer);
-
-    inject(DestroyRef).onDestroy(() => URL.revokeObjectURL(this.videoSrc));
+    const destroyRef = inject(DestroyRef);
+    const sanitizer = inject(DomSanitizer);
 
     afterNextRender(() => {
-      if (!this.file()) {
-        return;
-      }
+      const file = untracked(this.file);
+      if (!file) return;
 
       /**
        * We sanitize the URL here to enable the preview.
        * Please note that this could cause security issues!
        **/
-      this.videoSrc = URL.createObjectURL(this.file());
+      const videoObjectUrl = URL.createObjectURL(file);
       this._sanitizedVideoSrc.set(
-        this.sanitizer.bypassSecurityTrustUrl(this.videoSrc)
+        sanitizer.bypassSecurityTrustUrl(videoObjectUrl)
       );
+
+      destroyRef.onDestroy(() => URL.revokeObjectURL(videoObjectUrl));
     });
   }
 }

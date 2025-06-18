@@ -87,7 +87,7 @@ export class NgxDropzoneComponent implements OnChanges {
   protected readonly isHovered = signal(false);
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes.disabled && this.isHovered()) {
+    if (changes['disabled'] && this.isHovered()) {
       this.isHovered.set(false);
     }
   }
@@ -128,15 +128,17 @@ export class NgxDropzoneComponent implements OnChanges {
   }
 
   showFileSelector() {
-    if (!this.disabled) {
+    if (!this.disabled()) {
       (this.fileInput().nativeElement as HTMLInputElement).click();
     }
   }
 
-  _onFilesSelected(event: Event) {
-    const files: FileList = (event.target as HTMLInputElement).files;
+  async _onFilesSelected(event: Event) {
+    const files: FileList = (event.target as HTMLInputElement).files!;
 
-    import('./on-drop').then((m) => m.handleFileDrop(this, files));
+    // We must `await` before setting `value` to an empty string,
+    // because it's going to prune the `files` on the input element.
+    await import('./on-drop').then((m) => m.handleFileDrop(this, files));
 
     // Reset the native file input element to allow selecting the same file again
     this.fileInput().nativeElement.value = '';

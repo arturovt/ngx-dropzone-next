@@ -6,6 +6,7 @@ import {
   ChangeDetectionStrategy,
   booleanAttribute,
   input,
+  inject,
 } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 
@@ -23,7 +24,7 @@ import { NgxDropzoneRemoveBadgeComponent } from './ngx-dropzone-remove-badge/ngx
   },
 })
 export class NgxDropzonePreviewComponent {
-  readonly hostStyles = this.sanitizer.bypassSecurityTrustStyle(`
+  readonly hostStyles = inject(DomSanitizer).bypassSecurityTrustStyle(`
     display: flex;
     height: 140px;
     min-height: 140px;
@@ -36,8 +37,6 @@ export class NgxDropzonePreviewComponent {
     border-radius: 5px;
     position: relative;
   `);
-
-  constructor(protected sanitizer: DomSanitizer) {}
 
   /** The file to preview. */
   readonly file = input<File>();
@@ -72,12 +71,13 @@ export class NgxDropzonePreviewComponent {
   /** Remove the preview item (use from component code). */
   remove() {
     if (this.removable()) {
-      this.removed.emit(this.file());
+      this.removed.emit(this.file()!);
     }
   }
 
   protected async readFile(): Promise<string | ArrayBuffer> {
     return new Promise<string | ArrayBuffer>((resolve, reject) => {
+      const file = this.file();
       const reader = new FileReader();
 
       const cleanup = () => {
@@ -87,10 +87,10 @@ export class NgxDropzonePreviewComponent {
 
       const onLoad = () => {
         cleanup();
-        resolve(reader.result);
+        resolve(reader.result!);
       };
 
-      const onError = (error: ErrorEvent) => {
+      const onError = (error: Event) => {
         cleanup();
         reject(error);
       };
@@ -98,13 +98,13 @@ export class NgxDropzonePreviewComponent {
       reader.addEventListener('load', onLoad);
       reader.addEventListener('error', onError);
 
-      if (!this.file()) {
+      if (!file) {
         return reject(
           'No file to read. Please provide a file using the [file] Input property.'
         );
       }
 
-      reader.readAsDataURL(this.file());
+      reader.readAsDataURL(file);
     });
   }
 }

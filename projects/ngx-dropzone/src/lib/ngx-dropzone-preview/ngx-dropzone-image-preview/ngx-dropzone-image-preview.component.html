@@ -1,4 +1,4 @@
-<img [src]="imageSrc" />
+<img [src]="imageSrc()" />
 <ng-content select="ngx-dropzone-label"></ng-content>
 @if (removable()) {
   <ngx-dropzone-remove-badge (click)="_remove($event)" />
