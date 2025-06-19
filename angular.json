@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "ngx-dropzone-lib": {
+    "demos": {
       "root": "",
       "sourceRoot": "src",
       "projectType": "application",
@@ -15,7 +15,7 @@
           "options": {
             "aot": false,
             "outputPath": {
-              "base": "dist/ngx-dropzone-lib"
+              "base": "dist/demos"
             },
             "index": "src/index.html",
             "polyfills": ["src/polyfills.ts"],
@@ -40,14 +40,14 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "buildTarget": "ngx-dropzone-lib:build"
+            "buildTarget": "demos:build"
           },
           "configurations": {
             "production": {
-              "buildTarget": "ngx-dropzone-lib:build:production"
+              "buildTarget": "demos:build:production"
             },
             "development": {
-              "buildTarget": "ngx-dropzone-lib:build:development"
+              "buildTarget": "demos:build:development"
             }
           },
           "defaultConfiguration": "development"

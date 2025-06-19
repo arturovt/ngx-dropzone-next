@@ -4,11 +4,11 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "test": "ng test",
-    "lint": "ng lint",
-    "e2e": "ng e2e",
     "build": "ng build ngx-dropzone -c production",
-    "postbuild": "cp README.md ./dist/ngx-dropzone-next"
+    "postbuild": "cp README.md ./dist/ngx-dropzone-next",
+    "cy:run": "cypress run",
+    "serve:demos:static": "serve dist/demos/browser -s -l 4200 --cors",
+    "e2e": "start-server-and-test serve:demos:static 4200 cy:run"
   },
   "private": true,
   "dependencies": {
@@ -31,6 +31,7 @@
     "@angular/language-service": "^19.2.6",
     "@types/jasminewd2": "~2.0.3",
     "@types/node": "^22.14.1",
+    "cypress": "^14.5.0",
     "jasmine-core": "~3.8.0",
     "jasmine-spec-reporter": "~5.0.0",
     "karma": "~6.3.0",
@@ -40,6 +41,8 @@
     "karma-jasmine-html-reporter": "^1.5.0",
     "ng-packagr": "^19.2.2",
     "prettier": "^3.5.3",
+    "serve": "^14.2.4",
+    "start-server-and-test": "^2.0.12",
     "typescript": "~5.8.3"
   }
 }
