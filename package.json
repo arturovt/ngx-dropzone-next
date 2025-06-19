@@ -4,7 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build ngx-dropzone -c production",
+    "build": "ng build ngx-dropzone",
     "postbuild": "cp README.md ./dist/ngx-dropzone-next",
     "cy:run": "cypress run",
     "serve:demos:static": "serve dist/demos/browser -s -l 4200 --cors",
