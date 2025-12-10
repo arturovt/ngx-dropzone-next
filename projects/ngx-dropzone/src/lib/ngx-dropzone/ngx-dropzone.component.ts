@@ -19,8 +19,8 @@ import {
 } from '@angular/core';
 
 import { NgxDropzonePreviewComponent } from '../ngx-dropzone-preview/ngx-dropzone-preview.component';
-
 import type { RejectedFile } from './ngx-dropzone.service';
+import { handleFileDrop, onDropImpl } from './on-drop';
 
 export interface NgxDropzoneChangeEvent {
   source: NgxDropzoneComponent;
@@ -159,10 +159,7 @@ export class NgxDropzoneComponent implements OnChanges {
         return;
       }
 
-      this._pendingTasks.run(async () => {
-        const { onDrop } = await import('./on-drop');
-        onDrop(this, dataTransfer);
-      });
+      this._pendingTasks.run(() => onDropImpl(this, dataTransfer));
     };
 
     // Manual event listeners to avoid Angular's change detection overhead.
@@ -182,7 +179,7 @@ export class NgxDropzoneComponent implements OnChanges {
   }
 
   // Handles files selected via <input type="file">.
-  private _onFilesSelected = async (event: Event) => {
+  private _onFilesSelected = (event: Event) => {
     const target = <HTMLInputElement>event.target;
     const files = target.files;
 
@@ -194,13 +191,10 @@ export class NgxDropzoneComponent implements OnChanges {
       return;
     }
 
-    this._pendingTasks.run(async () => {
-      // We must `await` before setting `value` to an empty string,
-      // because it's going to prune the `files` on the input element.
-      await import('./on-drop').then((m) => m.handleFileDrop(this, files));
-
-      // Reset the native file input element to allow selecting the same file again
+    try {
+      handleFileDrop(this, files);
+    } finally {
       target.value = '';
-    });
+    }
   };
 }

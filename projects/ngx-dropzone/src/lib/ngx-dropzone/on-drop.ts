@@ -1,6 +1,7 @@
 import type { NgxDropzoneComponent } from './ngx-dropzone.component';
+import { NgxDropzoneService } from './ngx-dropzone.service';
 
-export async function onDrop(
+export async function onDropImpl(
   ctx: NgxDropzoneComponent,
   dataTransfer: DataTransfer
 ) {
@@ -11,7 +12,7 @@ export async function onDrop(
     !ctx.processDirectoryDrop() ||
     !DataTransferItem.prototype.webkitGetAsEntry
   ) {
-    await handleFileDrop(ctx, files);
+    handleFileDrop(ctx, files);
     // if processDirectoryDrop is enabled and webkitGetAsEntry is supported we can extract files from a dropped directory
   } else if (items.length > 0) {
     const droppedFiles: File[] = [];
@@ -70,7 +71,7 @@ export async function onDrop(
         }
       );
 
-      await handleFileDrop(ctx, droppedFilesList.files);
+      handleFileDrop(ctx, droppedFilesList.files);
     }
   }
 }
@@ -116,12 +117,7 @@ function extractFilesFromDirectory(directory: FileSystemEntry) {
   });
 }
 
-export async function handleFileDrop(
-  ctx: NgxDropzoneComponent,
-  files: FileList
-) {
-  const { NgxDropzoneService } = await import('./ngx-dropzone.service');
-
+export function handleFileDrop(ctx: NgxDropzoneComponent, files: FileList) {
   const service = ctx.injector.get(NgxDropzoneService);
 
   const result = service.parseFileList(
