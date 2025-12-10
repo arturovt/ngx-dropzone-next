@@ -2,49 +2,47 @@ import type { NgxDropzoneComponent } from './ngx-dropzone.component';
 
 export async function onDrop(
   ctx: NgxDropzoneComponent,
-  { dataTransfer }: DragEvent
+  dataTransfer: DataTransfer
 ) {
-  if (!dataTransfer) {
-    if (typeof ngDevMode !== 'undefined' && ngDevMode) {
-      throw new Error('dataTransfer is not defined on the event object.');
-    }
-
-    return;
-  }
+  const { files, items } = dataTransfer;
 
   // if processDirectoryDrop is not enabled or webkitGetAsEntry is not supported we handle the drop as usual
   if (
     !ctx.processDirectoryDrop() ||
     !DataTransferItem.prototype.webkitGetAsEntry
   ) {
-    await handleFileDrop(ctx, dataTransfer.files);
+    await handleFileDrop(ctx, files);
     // if processDirectoryDrop is enabled and webkitGetAsEntry is supported we can extract files from a dropped directory
-  } else if (dataTransfer.items.length > 0) {
-    const droppedItems: DataTransferItemList = dataTransfer!.items;
-
+  } else if (items.length > 0) {
     const droppedFiles: File[] = [];
     const droppedDirectories: FileSystemEntry[] = [];
 
-    // seperate dropped files from dropped directories for easier handling
-    for (let index = 0; index < droppedItems.length; index++) {
-      const entry = droppedItems[index].webkitGetAsEntry();
+    // Separate dropped files from dropped directories
+    for (let index = 0; index < items.length; index++) {
+      const entry = items[index].webkitGetAsEntry();
 
       if (!entry) {
         continue;
       }
 
       if (entry.isFile) {
-        droppedFiles.push(dataTransfer.files[index]);
+        // Get File directly from entry instead of relying on index mapping.
+        const file = items[index].getAsFile();
+        if (file) {
+          droppedFiles.push(file);
+        }
       } else if (entry.isDirectory) {
         droppedDirectories.push(entry);
       }
     }
 
-    // create a DataTransfer
     const droppedFilesList = new DataTransfer();
-    droppedFiles.forEach((droppedFile) => {
-      droppedFilesList.items.add(droppedFile);
-    });
+    for (const file of droppedFiles) {
+      // Safari requires actual File objects, not Blobs.
+      if (file instanceof File) {
+        droppedFilesList.items.add(file);
+      }
+    }
 
     // if no directory is dropped we are done and can call handleFileDrop
     if (!droppedDirectories.length && droppedFilesList.items.length) {

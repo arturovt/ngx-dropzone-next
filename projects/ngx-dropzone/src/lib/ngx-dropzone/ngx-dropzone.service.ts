@@ -66,28 +66,43 @@ export class NgxDropzoneService {
       return true;
     }
 
+    // Sanitize filename first
+    const safeName = this.sanitizeFilename(file.name);
+    const filename = safeName.toLowerCase();
+    const filetype = file.type.toLowerCase();
+
     const acceptFiletypes = accept
       .split(',')
-      .map((it) => it.toLowerCase().trim());
-    const filetype = file.type.toLowerCase();
-    const filename = file.name.toLowerCase();
+      .map((it) => it.toLowerCase().trim())
+      .filter((it) => it.length > 0); // Remove empty strings
 
-    const matchedFileType = acceptFiletypes.find((acceptFiletype) => {
-      // check for wildcard mimetype (e.g. image/*)
+    return acceptFiletypes.some((acceptFiletype) => {
+      // Wildcard MIME (more restrictive).
       if (acceptFiletype.endsWith('/*')) {
-        return filetype.split('/')[0] === acceptFiletype.split('/')[0];
+        const [acceptMain] = acceptFiletype.split('/');
+        const [fileMain] = filetype.split('/');
+        return acceptMain === fileMain && acceptMain.length > 0;
       }
 
-      // check for file extension (e.g. .csv)
+      // Extension check - get LAST extension only.
       if (acceptFiletype.startsWith('.')) {
-        return filename.endsWith(acceptFiletype);
+        const lastDot = filename.lastIndexOf('.');
+        if (lastDot === -1) return false;
+        const ext = filename.substring(lastDot);
+        return ext === acceptFiletype;
       }
 
-      // check for exact mimetype match (e.g. image/jpeg)
-      return acceptFiletype == filetype;
+      // Exact MIME match
+      return acceptFiletype === filetype;
     });
+  }
 
-    return !!matchedFileType;
+  private sanitizeFilename(name: string): string {
+    return name
+      .replace(/[^a-zA-Z0-9._-]/g, '_') // Remove special chars
+      .replace(/\.{2,}/g, '.') // No ".."
+      .replace(/\0/g, '') // Remove null bytes
+      .substring(0, 255); // Limit length
   }
 
   private rejectFile(

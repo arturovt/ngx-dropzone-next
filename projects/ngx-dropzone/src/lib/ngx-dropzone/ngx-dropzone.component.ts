@@ -1,6 +1,5 @@
 import {
   Component,
-  HostListener,
   ElementRef,
   output,
   input,
@@ -14,9 +13,11 @@ import {
   signal,
   type OnChanges,
   type SimpleChanges,
+  PendingTasks,
+  afterNextRender,
+  DestroyRef,
 } from '@angular/core';
 
-import { preventDefault } from '../helpers';
 import { NgxDropzonePreviewComponent } from '../ngx-dropzone-preview/ngx-dropzone-preview.component';
 
 import type { RejectedFile } from './ngx-dropzone.service';
@@ -86,45 +87,22 @@ export class NgxDropzoneComponent implements OnChanges {
 
   protected readonly isHovered = signal(false);
 
+  private readonly _destroyRef = inject(DestroyRef);
+  private readonly _pendingTasks = inject(PendingTasks);
+  private readonly _host = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  constructor() {
+    if (typeof ngServerMode === 'undefined' || ngServerMode) {
+      return;
+    }
+
+    afterNextRender(() => this._setupEventListeners());
+  }
+
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['disabled'] && this.isHovered()) {
       this.isHovered.set(false);
     }
-  }
-
-  /** Show the native OS file explorer to select files. */
-  @HostListener('click')
-  _onClick() {
-    if (!this.disableClick()) {
-      this.showFileSelector();
-    }
-  }
-
-  @HostListener('dragover', ['$event'])
-  _onDragOver(event: DragEvent) {
-    if (this.disabled()) {
-      return;
-    }
-
-    preventDefault(event);
-    this.isHovered.set(true);
-  }
-
-  @HostListener('dragleave')
-  _onDragLeave() {
-    this.isHovered.set(false);
-  }
-
-  @HostListener('drop', ['$event'])
-  _onDrop(event: DragEvent) {
-    if (this.disabled()) {
-      return;
-    }
-
-    preventDefault(event);
-    this.isHovered.set(false);
-
-    import('./on-drop').then((m) => m.onDrop(this, event));
   }
 
   showFileSelector() {
@@ -133,17 +111,96 @@ export class NgxDropzoneComponent implements OnChanges {
     }
   }
 
-  async _onFilesSelected(event: Event) {
-    const files: FileList = (event.target as HTMLInputElement).files!;
+  private _setupEventListeners(): void {
+    const host = this._host.nativeElement;
+    const fileInput = this.fileInput().nativeElement;
 
-    // We must `await` before setting `value` to an empty string,
-    // because it's going to prune the `files` on the input element.
-    await import('./on-drop').then((m) => m.handleFileDrop(this, files));
+    const onClick = () => {
+      if (!this.disableClick()) {
+        this.showFileSelector();
+      }
+    };
 
-    // Reset the native file input element to allow selecting the same file again
-    this.fileInput().nativeElement.value = '';
+    // Dragover - prevents default to allow drop & shows hover state.
+    const onDragover = (event: DragEvent) => {
+      if (this.disabled()) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      this.isHovered.set(true);
+    };
+
+    // Dragleave - removes hover state when drag leaves element.
+    const onDragleave = (event: DragEvent) => {
+      const target = event.currentTarget as HTMLElement | null;
+      const related = event.relatedTarget as Node | null;
+
+      if (target && (!related || !target.contains(related))) {
+        this.isHovered.set(false);
+      }
+    };
+
+    const onDrop = (event: DragEvent) => {
+      if (this.disabled()) {
+        return;
+      }
+
+      // fix(#32): Prevent the default event behaviour which caused the change event to emit twice.
+      event.preventDefault();
+      event.stopPropagation();
+
+      this.isHovered.set(false);
+      const { dataTransfer } = event;
+
+      if (dataTransfer === null) {
+        return;
+      }
+
+      this._pendingTasks.run(async () => {
+        const { onDrop } = await import('./on-drop');
+        onDrop(this, dataTransfer);
+      });
+    };
+
+    // Manual event listeners to avoid Angular's change detection overhead.
+    host.addEventListener('click', onClick); // Show the native OS file explorer to select files.
+    host.addEventListener('dragover', onDragover);
+    host.addEventListener('dragleave', onDragleave);
+    host.addEventListener('drop', onDrop);
+    fileInput.addEventListener('change', this._onFilesSelected);
+
+    this._destroyRef.onDestroy(() => {
+      host.removeEventListener('click', onClick);
+      host.removeEventListener('dragover', onDragover);
+      host.removeEventListener('dragleave', onDragleave);
+      host.removeEventListener('drop', onDrop);
+      fileInput.removeEventListener('change', this._onFilesSelected);
+    });
+  }
+
+  // Handles files selected via <input type="file">.
+  private _onFilesSelected = async (event: Event) => {
+    const target = <HTMLInputElement>event.target;
+    const files = target.files;
 
     // fix(#32): Prevent the default event behaviour which caused the change event to emit twice.
-    preventDefault(event);
-  }
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (files === null || files.length === 0) {
+      return;
+    }
+
+    this._pendingTasks.run(async () => {
+      // We must `await` before setting `value` to an empty string,
+      // because it's going to prune the `files` on the input element.
+      await import('./on-drop').then((m) => m.handleFileDrop(this, files));
+
+      // Reset the native file input element to allow selecting the same file again
+      target.value = '';
+    });
+  };
 }
